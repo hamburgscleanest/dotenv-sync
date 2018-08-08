@@ -1,0 +1,43 @@
+{
+  "name": "dotenv-sync",
+  "displayName": "DotEnv-Sync",
+  "description": "Keep your local dotenv files in sync when the template file(s) changes.",
+  "version": "0.0.1",
+  "publisher": "timopruesse",
+  "engines": {
+    "vscode": "^1.25.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "*"
+  ],
+  "main": "./out/dotenv-sync",
+  "contributes": {
+    "commands": [
+      {
+        "command": "dotenv-sync.start",
+        "title": "Start DotEnv-Sync"
+      },
+      {
+        "command": "dotenv-sync.stop",
+        "title": "Stop DotEnv-Sync"
+      }
+    ]
+  },
+  "scripts": {
+    "vscode:prepublish": "yarn run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "postinstall": "node ./node_modules/vscode/bin/install",
+    "test": "yarn vscode:prepublish && node ./node_modules/vscode/bin/test"
+  },
+  "devDependencies": {
+    "@types/mocha": "^5.2.5",
+    "@types/node": "^10.5.3",
+    "tslint": "^5.11.0",
+    "typescript": "^3.0.1",
+    "vscode": "^1.1.18"
+  }
+}

@@ -24,7 +24,23 @@
         "command": "dotenv-sync.stop",
         "title": "Stop DotEnv-Sync"
       }
-    ]
+    ],
+    "configuration": {
+      "type": "object",
+      "title": "DotEnv-Sync configuration",
+      "properties": {
+        "dotenv-sync.filePattern": {
+          "type": "string",
+          "default": "**/.env.*",
+          "description": "File pattern"
+        },
+        "dotenv-sync.blacklist": {
+          "type": "array",
+          "default": [],
+          "description": "Files that you want to exclude from syncing."
+        }
+      }
+    }
   },
   "scripts": {
     "vscode:prepublish": "yarn run compile",

@@ -1,12 +1,26 @@
-import { workspace, FileSystemWatcher, Uri, window } from 'vscode';
+import {
+  workspace,
+  FileSystemWatcher,
+  Uri,
+  window,
+  WorkspaceConfiguration
+} from 'vscode';
 import EnvReader from './EnvReader';
 import EnvWriter from './EnvWriter';
 import { EnvFile } from './Env.types';
 
 class EnvWatcher {
+  private _config: WorkspaceConfiguration;
   private _watcher: FileSystemWatcher | undefined;
-  private _filePattern = '**/.env.*';
   private _trackedFiles: Record<string, EnvFile> = {};
+
+  public constructor() {
+    this._config = workspace.getConfiguration('dotenv-sync');
+  }
+
+  private _getFilePattern() {
+    return this._config.get<string>('filePattern') || '**/.env.*';
+  }
 
   public start = () => {
     if (this._watcher) {
@@ -15,11 +29,13 @@ class EnvWatcher {
       return;
     }
 
-    EnvReader.getFiles(this._filePattern).then(
-      files => (this._trackedFiles = files)
-    );
+    const filePattern = this._getFilePattern();
 
-    this._watcher = workspace.createFileSystemWatcher(this._filePattern);
+    EnvReader.getFiles(filePattern).then(files => (this._trackedFiles = files));
+
+    // TODO: Implement blacklist..
+
+    this._watcher = workspace.createFileSystemWatcher(filePattern);
     this._watcher.onDidCreate(this.onCreate);
     this._watcher.onDidChange(this.onChange);
     this._watcher.onDidDelete(this.onDelete);

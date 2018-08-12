@@ -29,15 +29,15 @@
       "type": "object",
       "title": "DotEnv-Sync configuration",
       "properties": {
-        "dotenv-sync.filePattern": {
+        "dotenv-sync.envFilePath": {
+          "type": "string",
+          "default": "**/.env",
+          "description": "Glob file pattern for the environment file that is used by your app/package."
+        },
+        "dotenv-sync.watchFilePattern": {
           "type": "string",
           "default": "**/.env.*",
-          "description": "File pattern"
-        },
-        "dotenv-sync.blacklist": {
-          "type": "array",
-          "default": [],
-          "description": "Files that you want to exclude from syncing."
+          "description": "Glob file pattern for which files you want to include/exclude."
         }
       }
     }

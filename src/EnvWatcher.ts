@@ -1,47 +1,32 @@
-import {
-  workspace,
-  FileSystemWatcher,
-  Uri,
-  window,
-  WorkspaceConfiguration
-} from 'vscode';
+import {workspace, FileSystemWatcher, Uri, window, WorkspaceConfiguration} from 'vscode';
 import EnvReader from './EnvReader';
 import EnvWriter from './EnvWriter';
-import { EnvFile } from './Env.types';
+import {EnvFile} from './Env.types';
+import EnvCurrent from './EnvCurrent';
+import EnvDiff from './EnvDiff';
 
 class EnvWatcher {
-  private _config: WorkspaceConfiguration;
   private _watcher: FileSystemWatcher | undefined;
   private _trackedFiles: Record<string, EnvFile> = {};
 
-  public constructor() {
-    this._config = workspace.getConfiguration('dotenv-sync');
-  }
-
-  private _getFilePattern() {
-    return this._config.get<string>('filePattern') || '**/.env.*';
-  }
-
-  public start = () => {
+  public async start() {
     if (this._watcher) {
       window.showErrorMessage('DotEnv-Sync is already running!');
 
       return;
     }
 
-    const filePattern = this._getFilePattern();
+    const filePattern = workspace.getConfiguration('dotenv-sync').get<string>('watchFilePattern') || '**/.env.*';
 
-    EnvReader.getFiles(filePattern).then(files => (this._trackedFiles = files));
-
-    // TODO: Implement blacklist..
+    this._trackedFiles = await EnvReader.getAllFiles(filePattern);
 
     this._watcher = workspace.createFileSystemWatcher(filePattern);
     this._watcher.onDidCreate(this.onCreate);
     this._watcher.onDidChange(this.onChange);
     this._watcher.onDidDelete(this.onDelete);
-  };
+  }
 
-  public stop = () => {
+  public stop() {
     if (!this._watcher) {
       window.showErrorMessage('DotEnv-Sync is not running!');
 
@@ -50,36 +35,30 @@ class EnvWatcher {
 
     this._watcher.dispose();
     this._watcher = undefined;
-  };
+    this._trackedFiles = {};
+  }
 
   private onCreate = async (uri: Uri) => {
-    const reader = await EnvReader.read(uri);
-    const createdFile = reader.getFile();
+    const createdFile = await EnvReader.getFile(uri);
     if (!createdFile) {
       return;
     }
 
+    this._trackedFiles[createdFile.fileName] = createdFile;
+
     window.showInformationMessage(`'${createdFile.fileName}' created`);
   };
 
-  // TODO: Refactor
   private onChange = async (uri: Uri) => {
-    const reader = await EnvReader.read(uri);
-    const changedFile = reader.getFile();
+    const changedFile = await EnvReader.getFile(uri);
     if (!changedFile) {
       return;
     }
 
-    const currentEnv = await reader.getCurrentEnvFile();
     const trackedFile = this._trackedFiles[changedFile.fileName];
-    let values;
-    if (trackedFile) {
-      values = await reader.compare(trackedFile);
-    } else {
-      values = await reader.compareWithCurrent();
-    }
-
-    this._trackedFiles[changedFile.fileName] = changedFile;
+    const values = trackedFile
+      ? await EnvDiff.getChanges(trackedFile)
+      : await EnvDiff.getChanges(await EnvCurrent.getFile());
 
     const changedKeys = Object.keys(values);
     if (changedKeys.length === 0) {
@@ -88,6 +67,7 @@ class EnvWatcher {
 
     window.showInformationMessage(`'${changedFile.fileName}' changed`);
 
+    const currentEnv = await EnvCurrent.getFile();
     const changedValues: Record<string, string> = {};
     for (const key of changedKeys) {
       const envValue = values[key];
@@ -96,8 +76,7 @@ class EnvWatcher {
       }
 
       const input = await window.showInputBox({
-        prompt: `'${key}' changed from '${envValue.current ||
-          ''}' to '${envValue.changed || ''}'`,
+        prompt: `'${key}' changed from '${envValue.current || ''}' to '${envValue.changed || ''}'`,
         value: envValue.changed || ''
       });
 
@@ -110,11 +89,19 @@ class EnvWatcher {
       return;
     }
 
-    EnvWriter.write(currentEnv, changedValues);
+    await EnvWriter.write(currentEnv, changedValues);
+    this._trackedFiles[changedFile.fileName] = await EnvReader.getFile(uri);
   };
 
   private onDelete = async (uri: Uri) => {
-    window.showWarningMessage(`'${uri.fsPath}' deleted`);
+    const trackedFile = this._trackedFiles[uri.path];
+
+    // TODO: Show values that were 'deleted'..
+    console.info(trackedFile);
+
+    window.showWarningMessage(`'${uri.path}' deleted`);
+
+    delete this._trackedFiles[uri.path];
   };
 }
 

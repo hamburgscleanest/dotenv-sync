@@ -9,8 +9,9 @@ export interface EnvValue {
   changed: string | undefined;
 }
 
-export function isEnvFile(object: any): object is EnvValue {
-  return object.query === undefined;
-}
-
 export type ChangedValues = Record<string, EnvValue>;
+
+export enum ENV_FILE {
+  KEY = 0,
+  VALUE = 1
+}

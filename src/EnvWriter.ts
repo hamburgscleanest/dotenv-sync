@@ -1,17 +1,21 @@
-import { EnvFile } from './Env.types';
+import {EnvFile, ENV_FILE} from './Env.types';
 
 class EnvWriter {
-  public static write(envFile: EnvFile, changedValues: Record<string, string>) {
-    const envWriter = new EnvWriter();
+  private static _quoteIfNeeded(value: string) {
+    if (value.indexOf(' ') === -1 || (value[0] === '"' && value.slice(-1) === '"')) {
+      return value;
+    }
 
-    return envWriter.write(envFile, changedValues);
+    return `"${value}"`;
   }
 
-  private _createValue(pair: [string, string]) {
+  private static _createValue(pair: [string, string]) {
+    pair[ENV_FILE.VALUE] = this._quoteIfNeeded(pair[ENV_FILE.VALUE]);
+
     return `${pair.join('=')}\n`;
   }
 
-  public write(envFile: EnvFile, changedValues: Record<string, string>) {
+  public static async write(envFile: EnvFile, changedValues: Record<string, string>) {
     const fs = require('fs');
 
     const file = fs.createWriteStream(envFile.path);
@@ -20,22 +24,26 @@ class EnvWriter {
     });
 
     for (const pair of Object.entries(envFile.values)) {
-      const key = pair[0];
+      const key = pair[ENV_FILE.KEY];
       if (changedValues[key]) {
-        pair[1] = changedValues[key];
+        pair[ENV_FILE.VALUE] = changedValues[key];
         delete changedValues[key];
       }
 
-      file.write(this._createValue(pair));
+      file.write(EnvWriter._createValue(pair));
     }
 
     for (const pair of Object.entries(changedValues)) {
-      file.write(this._createValue(pair));
+      file.write(EnvWriter._createValue(pair));
     }
 
     file.end();
 
-    return this;
+    return new Promise(resolve =>
+      file.on('finish', () => {
+        resolve(envFile.path);
+      })
+    );
   }
 }
 

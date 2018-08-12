@@ -1,6 +1,6 @@
 'use strict';
 
-import { commands, ExtensionContext, window } from 'vscode';
+import {commands, ExtensionContext, window} from 'vscode';
 import EnvWatcher from './EnvWatcher';
 
 const watcher = new EnvWatcher();

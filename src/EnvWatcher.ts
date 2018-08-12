@@ -80,6 +80,12 @@ class EnvWatcher {
         value: envValue.changed || ''
       });
 
+      /**
+       * TODO:
+       * If the user cancels the input we might have to write an empty value into the file.
+       * Otherwise the value will always count as 'removed' from the tracked file.
+       * So we just write 'SOME_VALUE=' into the file to mark it as empty.
+       */
       if (input) {
         changedValues[key] = input;
       }

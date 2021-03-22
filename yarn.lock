@@ -16,9 +16,9 @@
     esutils "^2.0.2"
     js-tokens "^4.0.0"
 
-"@types/mocha@^5.2.7":
-  version "5.2.7"
-  resolved "https://registry.yarnpkg.com/@types/mocha/-/mocha-5.2.7.tgz#315d570ccb56c53452ff8638738df60726d5b6ea"
+"@types/mocha@^8.2.2":
+  version "8.2.2"
+  resolved "https://registry.yarnpkg.com/@types/mocha/-/mocha-8.2.2.tgz#91daa226eb8c2ff261e6a8cbf8c7304641e095e0"
 
 "@types/node@^13.1.8":
   version "13.1.8"
